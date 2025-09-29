@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WARTEZA</title> <!-- Changed from Khalk Store to WARTEZA -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK v8 импортууд - Realtime Database-ийг нэмсэн -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+  <style>
+    body {margin:0; padding:0; font-family:Arial,sans-serif; background:#000; color:#eee;}
+    header {
+      padding:15px; 
+      display:flex; 
+      align-items:center; 
+      justify-content:space-between; 
+      border-bottom:1px solid #222;
+      opacity: 0;
+      transform: rotateY(90deg);
+      animation: rotateIn 0.5s ease forwards;
+      position: relative;
+      padding-bottom: 15px;
+    }
+    header img.logo{width:40px;height:40px;cursor:pointer;}
+    header .logo-container {
+      display:flex; 
+      flex-direction: row;
+      align-items:center; 
+      gap: 10px;
+      position: relative;
+    }
+    header .logo-text {
+      font-family: 'Cinzel', serif; 
+      font-size:14px;
+      font-weight:700; 
+      color:#fff; 
+      text-transform:uppercase;
+      margin-left: -5px;
+    }
+    header .menu-text {
+      position: absolute;
+      top: 50px;
+      left: 20px;
+      font-size: 10px;
+      color: #ccc;
+      white-space: nowrap;
+    }
+    header .cart-container, header .history-container {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    header .right-icons {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    header img.cart, header img.history{width:28px;height:28px;}
+    .cart-count {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #fff; /* Changed from linear-gradient(45deg, #ff0000, #cc0000) to white */
+      color: #000; /* Changed to black for contrast */
+      border-radius: 50%;
+      padding: 0px;
+      font-size: 8px;
+      font-weight: bold;
+      width: 12px;
+      height: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      display: none;
+    }
+    #current-page-display {display: none;}
+    .banner {
+      position: relative;
+      width: 100%;
+      padding-bottom: 100%;
+      height: 0;
+      overflow: hidden;
+      margin-bottom: 20px;
+      opacity: 0;
+      transform: translateY(50px);
+      animation: bannerFadeIn 0.8s ease forwards;
+      background-color: #000;
+    }
+    .banner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    .banner::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0));
+      z-index: 2;
+    }
+    .banner h1 {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: #fff;
+      font-family: 'Cinzel', serif;
+      font-size: 36px;
+      font-weight: 700;
+      text-transform: uppercase;
+      z-index: 3;
+      margin: 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    }
+    @keyframes bannerFadeIn {
+      from {opacity: 0; transform: translateY(50px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+    .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+      gap:20px;
+      padding:20px;
+    }
+    .product {
+      background:#1c1c1c; 
+      border-radius:12px; 
+      padding:10px; 
+      text-align:center; 
+      position:relative; 
+      cursor:pointer; 
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      overflow:hidden;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: productFadeIn 0.5s ease forwards;
+    }
+    .product:nth-child(1) {animation-delay: 0.1s;}
+    .product:nth-child(2) {animation-delay: 0.2s;}
+    .product:nth-child(3) {animation-delay: 0.3s;}
+    .product:nth-child(4) {animation-delay: 0.4s;}
+    .product:nth-child(5) {animation-delay: 0.5s;}
+    .product img {
+      width:100%; 
+      border-radius:12px; 
+      transition: transform 0.3s ease;
+    }
+    .product:hover img {transform: scale(1.1);}
+    .price {margin-top:8px; font-size:14px;}
+    .old-price{text-decoration:line-through;color:#999;margin-left:4px;}
+    button {
+      padding:6px 12px; 
+      border:none; 
+      border-radius:8px; 
+      background:#007bff; 
+      color:#fff; 
+      font-size:13px; 
+      cursor:pointer; 
+      margin-top:6px;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      outline: none;
+    }
+    button:hover {
+      background:#0056b3; 
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+    }
+    button:focus {
+      outline: none;
+      box-shadow: 0 0 8px rgba(0,123,255,0.5);
+    }
+    .page {display:none; opacity: 0; transform: rotateY(90deg); animation: rotateIn 0.5s ease forwards;}
+    .page.active {display:block;}
+    .cart-page{padding:20px;}
+    .cart-item{
+      background:#1c1c1c; 
+      border-radius:12px; 
+      padding:10px; 
+      margin-bottom:10px; 
+      display:flex; 
+      align-items:center; 
+      gap:10px; 
+      position:relative; 
+      animation:slideIn 0.5s ease forwards;
+      border: 2px solid transparent;
+    }
+    .cart-item.selected {border-color: #fff;} /* Changed from #ff4d4d to white */
+    .cart-item img{width:50px;border-radius:6px;}
+    .cart-empty{text-align:center;margin-top:50px;color:#888;font-size:16px;}
+    .cart-item .delete-btn{
+      position:absolute; right:-50px; top:50%; transform:translateY(-50%); width:28px; height:28px;
+      opacity:0; transition: all 0.3s ease;
+    }
+    .cart-item:hover{border:2px solid #007bff;}
+    .cart-item:hover .delete-btn{right:10px; opacity:1;}
+    .cart-summary {
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 20px;
+      text-align: right;
+      color: #fff;
+    }
+    .cart-summary div {margin-bottom: 10px; font-size: 16px;}
+    .cart-summary .total-price {font-size: 20px; font-weight: bold; color: #fff;} /* Changed from #ff4d4d to white */
+    .cart-summary button {
+      width: 100%;
+      padding: 12px;
+      background: #fff; /* Changed from linear-gradient(45deg, #ff4d4d, #ff1a1a) to white */
+      color: #000; /* Added for contrast */
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .cart-summary button:hover {background: #e0e0e0; transform: translateY(-2px);} /* Adjusted hover to light gray */
+    .cart-item input[type="checkbox"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #fff; /* Changed from #ff4d4d to white */
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .cart-item input[type="checkbox"]:checked {background-color: #fff; border-color: #fff;} /* Changed from #ff4d4d to white */
+    .cart-item input[type="checkbox"]:checked::after {
+      content: '✔';
+      color: #000; /* Changed to black for contrast */
+      font-size: 14px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .history-page {padding: 20px;}
+    .history-page h2 {text-align: center; color: #fff; margin-bottom: 20px;}
+    .order-card {
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border: 1px solid #333;
+      animation: slideIn 0.5s ease forwards;
+    }
+    .order-card h3 {color: #fff; margin-top: 0; margin-bottom: 10px; font-size: 18px;} /* Changed from #ff4d4d to white */
+    .order-card .order-item-list {display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;}
+    .order-card .order-item-list img {width: 40px; height: 40px; border-radius: 6px; object-fit: cover; border: 1px solid #555;}
+    .order-card p {margin: 5px 0; font-size: 14px; color: #ccc;}
+    .order-card .total-amount {font-weight: bold; color: #fff; font-size: 16px; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px;}
+    .history-empty {text-align: center; margin-top: 50px; color: #888; font-size: 16px;}
+    @keyframes slideIn {from {opacity:0; transform:translateX(-50px);} to {opacity:1; transform:translateX(0);}}
+    @keyframes productFadeIn {from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);}}
+    @keyframes rotateIn {from {opacity: 0; transform: rotateY(90deg);} to {opacity: 1; transform: rotateY(0);}}
+    #notify {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1c1c1c;
+      border: 2px solid #28a745;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      display: none;
+      z-index: 1000;
+      width: 300px;
+      text-align: center;
+    }
+    @keyframes notifyIn {0% {opacity:0; transform:translate(-50%, -50px);} 100% {opacity:1; transform:translate(-50%, 0);}}
+    @keyframes notifyOut {0% {opacity:1; transform:translate(-50%, 0);} 100% {opacity:0; transform:translate(-50%, -50px);}}
+    .product-panel {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .product:hover .product-panel {display: flex; opacity: 1; transform: translateX(-50%) scale(1); animation: panelIn 0.3s ease forwards;}
+    .product-panel button {
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: none;
+      color: #fff;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      outline: none;
+    }
+    .product-panel button:nth-child(1) {background: #1c1c1c; border: 2px solid #fff;} /* Changed from #ff4d4d to white */
+    .product-panel button:nth-child(1):hover {transform: scale(1.1); box-shadow: 0 2px 8px rgba(255,255,255,0.3); opacity: 0.9;} /* Adjusted shadow */
+    .product-panel button:nth-child(1):focus {outline: none; box-shadow: 0 0 8px rgba(255,255,255,0.5);} /* Adjusted shadow */
+    .product-panel button:nth-child(2) {background: #fff; color: #000;} /* Changed from red gradient to white */
+    .product-panel button:nth-child(2):hover {transform: scale(1.1); box-shadow: 0 2px 8px rgba(255,255,255,0.3); opacity: 0.9;} /* Adjusted shadow */
+    .product-panel button:nth-child(2):focus {outline: none; box-shadow: 0 0 8px rgba(255,255,255,0.5);} /* Adjusted shadow */
+    @keyframes panelIn {from {opacity: 0; transform: translateX(-50%) scale(0.8);} to {opacity: 1; transform: translateX(-50%) scale(1);}}
+    #codeModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    .code-modal-content {
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      width: 300px;
+      color: #fff;
+    }
+    .code-modal-content h3 {margin: 0 0 10px;}
+    .code-modal-content p {font-size: 18px; font-weight: bold; color: #fff;} /* Changed from #ff4d4d to white */
+    .code-modal-content button {background: #fff; color: #000; padding: 10px 20px; border-radius: 8px;} /* Changed from #ff4d4d to white */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: -350px;
+      width: 300px;
+      height: 100%;
+      background: #1c1c1c;
+      z-index: 1500;
+      transition: left 0.3s ease;
+      padding: 20px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+    #sidebar.active {left: 0;}
+    #sidebar ul {list-style: none; padding: 0; margin: 0;}
+    #sidebar li {
+      padding: 15px;
+      font-size: 18px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #sidebar li img {width: 24px; height: 24px; vertical-align: middle;}
+    #sidebar li:hover {background: #fff; color: #000; border-radius: 8px;} /* Changed from #ff4d4d to white */
+    #sidebar .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 24px;
+      color: #fff;
+      cursor: pointer;
+    }
+    @keyframes sidebarIn {from {left: -350px;} to {left: 0;}}
+    @keyframes sidebarOut {from {left: 0;} to {left: -350px;}}
+    .address-form-container {
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 500px;
+      color: #eee;
+    }
+    .address-form-container h2 {text-align: center; margin-bottom: 20px; color: #fff;}
+    .address-form-container .form-group {margin-bottom: 15px;}
+    .address-form-container label {display: block; margin-bottom: 5px; font-size: 14px; color: #ccc;}
+    .address-form-container input[type="text"],
+    .address-form-container input[type="tel"] {
+      width: calc(100% - 20px);
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #222;
+      color: #fff;
+      font-size: 16px;
+    }
+    .address-form-container input[type="text"]:focus,
+    .address-form-container input[type="tel"]:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0,123,255,0.5);
+    }
+    .address-form-container button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .address-form-container button[type="submit"]:hover {
+      background: #0056b3;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-container">
+    <img src="assets/khalk.png" class="logo" alt="WARTEZA Logo" onclick="toggleSidebar()"> <!-- Updated alt text -->
+    <span class="logo-text">WARTEZA</span> <!-- Changed from Khalk Store to WARTEZA -->
+  </div>
+  <span class="menu-text">Menu</span>
+  <div class="right-icons">
+    <div class="history-container" onclick="openHistory()">
+      <img src="assets/history.png" class="history" alt="History">
+    </div>
+    <div class="cart-container" onclick="openCart()">
+      <img src="assets/cart.png" class="cart" alt="Cart">
+      <span class="cart-count" id="cartCount">0</span>
+    </div>
+  </div>
+  <div id="current-page-display">Home</div>
+</header>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <span class="close-btn" onclick="toggleSidebar()">×</span>
+  <ul>
+    <li onclick="showPage('addressPage')"><img src="assets/hayg.png" alt="Хаяг" style="width:24px; height:24px;">Хаяг</li>
+    <li onclick="showPage('homePage')">Home</li>
+    <li onclick="showPage('bestSellerPage')">Best Seller</li>
+    <li onclick="showPage('hoodiePage')">Hoodie</li>
+    <li onclick="showPage('sweaterPage')">Sweater</li>
+    <li onclick="showPage('pantsPage')">Pants</li>
+    <li onclick="showPage('accessoriesPage')">Accessories</li>
+    <li onclick="openHistory()"><img src="assets/history.png" alt="Түүх" style="width:24px; height:24px;">Захиалгын түүх</li>
+  </ul>
+</div>
+
+<!-- Home Page -->
+<div id="homePage" class="page active">
+  <div class="banner">
+    <img src="assets/home.png" alt="Home Banner">
+    <h1>Home</h1>
+  </div>
+  <div class="products">
+    <div class="product">
+      <img src="assets/baraa1.png" alt="Baraa1">
+      <div class="price">₮121,000 <span class="old-price">₮149,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa1.png','₮121,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa1.png','121000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa2.png" alt="Baraa2">
+      <div class="price">₮177,000 <span class="old-price">₮210,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa2.png','₮177,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa2.png','177000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa3.png" alt="Baraa3">
+      <div class="price">₮153,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa3.png','₮153,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa3.png','153000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa4.png" alt="Baraa4">
+      <div class="price">₮154,000 <span class="old-price">₮214,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa4.png','₮154,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa4.png','154000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa5.png" alt="Baraa5">
+      <div class="price">₮151,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa5.png','₮151,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa5.png','151000')">Захиалах</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Best Seller Page -->
+<div id="bestSellerPage" class="page">
+  <div class="banner">
+    <img src="assets/bestseller.png" alt="Best Seller Banner">
+    <h1>Best Seller</h1>
+  </div>
+  <div class="products">
+    <div class="product">
+      <img src="assets/baraa1.png" alt="Baraa1">
+      <div class="price">₮121,000 <span class="old-price">₮149,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa1.png','₮121,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa1.png','121000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa2.png" alt="Baraa2">
+      <div class="price">₮177,000 <span class="old-price">₮210,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa2.png','₮177,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa2.png','177000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa3.png" alt="Baraa3">
+      <div class="price">₮153,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa3.png','₮153,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa3.png','153000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa4.png" alt="Baraa4">
+      <div class="price">₮154,000 <span class="old-price">₮214,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa4.png','₮154,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa4.png','154000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa5.png" alt="Baraa5">
+      <div class="price">₮151,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa5.png','₮151,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa5.png','151000')">Захиалах</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hoodie Page -->
+<div id="hoodiePage" class="page">
+  <div class="banner">
+    <img src="assets/hoodie.png" alt="Hoodie Banner">
+    <h1>Hoodie</h1>
+  </div>
+  <div class="products">
+    <div class="product">
+      <img src="assets/baraa1.png" alt="Baraa1">
+      <div class="price">₮121,000 <span class="old-price">₮149,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa1.png','₮121,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa1.png','121000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa2.png" alt="Baraa2">
+      <div class="price">₮177,000 <span class="old-price">₮210,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa2.png','₮177,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa2.png','177000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa3.png" alt="Baraa3">
+      <div class="price">₮153,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa3.png','₮153,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa3.png','153000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa4.png" alt="Baraa4">
+      <div class="price">₮154,000 <span class="old-price">₮214,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa4.png','₮154,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa4.png','154000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa5.png" alt="Baraa5">
+      <div class="price">₮151,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa5.png','₮151,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa5.png','151000')">Захиалах</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sweater Page -->
+<div id="sweaterPage" class="page">
+  <div class="banner">
+    <img src="assets/sweater.png" alt="Sweater Banner">
+    <h1>Sweater</h1>
+  </div>
+  <div class="products">
+    <div class="product">
+      <img src="assets/baraa1.png" alt="Baraa1">
+      <div class="price">₮121,000 <span class="old-price">₮149,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa1.png','₮121,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa1.png','121000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa2.png" alt="Baraa2">
+      <div class="price">₮177,000 <span class="old-price">₮210,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa2.png','₮177,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa2.png','177000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa3.png" alt="Baraa3">
+      <div class="price">₮153,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa3.png','₮153,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa3.png','153000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa4.png" alt="Baraa4">
+      <div class="price">₮154,000 <span class="old-price">₮214,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa4.png','₮154,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa4.png','154000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa5.png" alt="Baraa5">
+      <div class="price">₮151,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa5.png','₮151,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa5.png','151000')">Захиалах</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pants Page -->
+<div id="pantsPage" class="page">
+  <div class="banner">
+    <img src="assets/pants.png" alt="Pants Banner">
+    <h1>Pants</h1>
+  </div>
+  <div class="products">
+    <div class="product">
+      <img src="assets/baraa1.png" alt="Baraa1">
+      <div class="price">₮121,000 <span class="old-price">₮149,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa1.png','₮121,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa1.png','121000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa2.png" alt="Baraa2">
+      <div class="price">₮177,000 <span class="old-price">₮210,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa2.png','₮177,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa2.png','177000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa3.png" alt="Baraa3">
+      <div class="price">₮153,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa3.png','₮153,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa3.png','153000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa4.png" alt="Baraa4">
+      <div class="price">₮154,000 <span class="old-price">₮214,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa4.png','₮154,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa4.png','154000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa5.png" alt="Baraa5">
+      <div class="price">₮151,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa5.png','₮151,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa5.png','151000')">Захиалах</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Accessories Page -->
+<div id="accessoriesPage" class="page">
+  <div class="banner">
+    <img src="assets/accessories.png" alt="Accessories Banner">
+    <h1>Accessories</h1>
+  </div>
+  <div class="products">
+    <div class="product">
+      <img src="assets/baraa1.png" alt="Baraa1">
+      <div class="price">₮121,000 <span class="old-price">₮149,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa1.png','₮121,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa1.png','121000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa2.png" alt="Baraa2">
+      <div class="price">₮177,000 <span class="old-price">₮210,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa2.png','₮177,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa2.png','177000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa3.png" alt="Baraa3">
+      <div class="price">₮153,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa3.png','₮153,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa3.png','153000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa4.png" alt="Baraa4">
+      <div class="price">₮154,000 <span class="old-price">₮214,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa4.png','₮154,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa4.png','154000')">Захиалах</button>
+      </div>
+    </div>
+    <div class="product">
+      <img src="assets/baraa5.png" alt="Baraa5">
+      <div class="price">₮151,000 <span class="old-price">₮185,000</span></div>
+      <div class="product-panel">
+        <button onclick="event.stopPropagation(); addToCart('assets/baraa5.png','₮151,000')">Сагсанд нэмэх</button>
+        <button onclick="event.stopPropagation(); openOrder('assets/baraa5.png','151000')">Захиалах</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cart Page -->
+<div id="cartPage" class="page cart-page">
+  <div id="cartItems"></div>
+  <div class="cart-empty" id="cartEmpty">Сагс хоосон байна</div>
+  <div id="cartSummary" class="cart-summary" style="display: none;">
+    <div>Нийт үнэ: <span id="selectedTotalPrice">₮0</span></div>
+    <button onclick="checkoutSelectedItems()">Сонгосон барааг захиалах</button>
+  </div>
+  <button onclick="backToShop()">⇦ Дэлгүүр рүү буцах</button>
+</div>
+
+<!-- History Page -->
+<div id="historyPage" class="page history-page">
+  <h2>Захиалгын түүх</h2>
+  <div id="orderHistoryItems"></div>
+  <div class="history-empty" id="historyEmpty">Захиалгын түүх хоосон байна.</div>
+  <button onclick="backToShop()">⇦ Дэлгүүр рүү буцах</button>
+</div>
+
+<!-- Address Page -->
+<div id="addressPage" class="page">
+  <div class="address-form-container">
+    <img src="assets/hayg.png" alt="Хаяг" style="display: block; margin: 0 auto 20px; width: 80px;">
+    <h2>Хүргэлтийн хаяг</h2>
+    <form id="addressForm">
+      <div class="form-group">
+        <label for="fullName">Бүтэн нэр:</label>
+        <input type="text" id="fullName" required>
+      </div>
+      <div class="form-group">
+        <label for="phoneNumber">Утасны дугаар:</label>
+        <input type="tel" id="phoneNumber" required>
+      </div>
+      <div class="form-group">
+        <label for="province">Аймаг/Хот:</label>
+        <input type="text" id="province" required>
+      </div>
+      <div class="form-group">
+        <label for="district">Сум/Дүүрэг:</label>
+        <input type="text" id="district" required>
+      </div>
+      <div class="form-group">
+        <label for="khoroo">Баг/Хороо:</label>
+        <input type="text" id="khoroo" required>
+      </div>
+      <div class="form-group">
+        <label for="street">Гудамж/Байрны нэр:</label>
+        <input type="text" id="street" required>
+      </div>
+      <div class="form-group">
+        <label for="apartment">Хаалга/Орцны дугаар:</label>
+        <input type="text" id="apartment">
+      </div>
+      <button type="submit">Хаягийг хадгалах</button>
+    </form>
+  </div>
+</div>
+
+<!-- Notification -->
+<div id="notify"></div>
+
+<!-- Code Modal -->
+<div id="codeModal">
+  <div class="code-modal-content">
+    <h3>Захиалга</h3>
+    <p>Доорх кодыг ашиглан төлбөрөө хийнэ үү</p>
+    <p id="paymentCode"></p>
+    <button onclick="closeCodeModal()">Хаах</button>
+  </div>
+</div>
+
+<script>
+// Declare db globally
+let db; 
+// Initialize cart with 'selected' property
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+// Ensure all existing cart items have a 'selected' property, default to true
+cart = cart.map(item => ({ ...item, selected: item.selected !== undefined ? item.selected : true }));
+
+// Initialize order history from localStorage
+let orderHistory = JSON.parse(localStorage.getItem("orderHistory")) || [];
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAEybA-Ou_PGkZINDT-opzVPUlrr6XOU8E",
+  authDomain: "khalkh-store.firebaseapp.com",
+  databaseURL: "https://khalkh-store-default-rtdb.firebaseio.com",
+  projectId: "khalkh-store",
+  storageBucket: "khalkh-store.firebasestorage.app",
+  messagingSenderId: "205879441792",
+  appId: "1:205879441792:web:677a6abe7912d6436a2965",
+  measurementId: "G-6M9HZM8G9N"
+};
+
+// Initialize Firebase and Realtime Database using v8 namespaced syntax
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("DOMContentLoaded fired. Attempting Firebase initialization...");
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+    console.log("Firebase app initialized.");
+  } else {
+    console.log("Firebase app already initialized.");
+  }
+  firebase.analytics();
+  db = firebase.database();
+  console.log("Realtime Database instance (db) assigned:", db);
+
+  // Initial render of the cart when the page loads
+  renderCart();
+  updateCartCount();
+
+  // Address form submit event listener
+  const addressForm = document.getElementById('addressForm');
+  if (addressForm) {
+    // Local Storage-оос хаягийн мэдээллийг уншиж формыг бөглөх
+    const savedAddress = localStorage.getItem("userAddress");
+    if (savedAddress) {
+      const addressData = JSON.parse(savedAddress);
+      document.getElementById('fullName').value = addressData.fullName || '';
+      document.getElementById('phoneNumber').value = addressData.phoneNumber || '';
+      document.getElementById('province').value = addressData.province || '';
+      document.getElementById('district').value = addressData.district || '';
+      document.getElementById('khoroo').value = addressData.khoroo || '';
+      document.getElementById('street').value = addressData.street || '';
+      document.getElementById('apartment').value = addressData.apartment || '';
+    }
+
+    addressForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const addressData = {
+        fullName: document.getElementById('fullName').value,
+        phoneNumber: document.getElementById('phoneNumber').value,
+        province: document.getElementById('province').value,
+        district: document.getElementById('district').value,
+        khoroo: document.getElementById('khoroo').value,
+        street: document.getElementById('street').value,
+        apartment: document.getElementById('apartment').value
+      };
+
+      localStorage.setItem("userAddress", JSON.stringify(addressData));
+      renderNotification("Хаяг амжилттай хадгалагдлаа!");
+      console.log("Address saved to Local Storage.");
+    });
+  }
+  // Эхлэхдээ Home хуудсыг идэвхтэй болгож, нэрийг нь харуулна
+  showPage('homePage');
+});
+
+// Show page
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar.classList.contains('active')) {
+    toggleSidebar();
+  }
+}
+
+// Cart page
+function openCart() {
+  showPage('cartPage');
+  renderCart();
+}
+
+// History page
+function openHistory() {
+  showPage('historyPage');
+  renderHistory();
+}
+
+function backToShop() {
+  showPage('homePage');
+}
+
+// Toggle sidebar
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar.classList.contains('active')) {
+    sidebar.style.animation = 'sidebarOut 0.3s forwards';
+    setTimeout(() => { sidebar.classList.remove('active'); }, 300);
+  } else {
+    sidebar.classList.add('active');
+    sidebar.style.animation = 'sidebarIn 0.3s forwards';
+  }
+}
+
+// Add to cart with scale effect
+function addToCart(img, price) {
+  const productEl = document.querySelector(`.product img[src="${img}"]`).parentElement;
+  productEl.style.transform = 'scale(1.05)';
+  setTimeout(() => { productEl.style.transform = 'scale(1)'; }, 300);
+
+  cart.push({ img, price, selected: true }); 
+  localStorage.setItem("cart", JSON.stringify(cart));
+  renderNotification("Бараа сагсанд нэмэгдлээ!");
+  renderCart();
+  updateCartCount();
+}
+
+// Сагсны тоог шинэчлэх функц
+function updateCartCount() {
+  const cartCountElement = document.getElementById('cartCount');
+  if (cart.length > 0) {
+    cartCountElement.innerText = cart.length;
+    cartCountElement.style.display = 'flex';
+  } else {
+    cartCountElement.style.display = 'none';
+  }
+}
+
+// Render cart
+function renderCart() {
+  const container = document.getElementById("cartItems");
+  const empty = document.getElementById("cartEmpty");
+  const cartSummary = document.getElementById("cartSummary");
+  container.innerHTML = "";
+
+  if (cart.length === 0) {
+    empty.style.display = "block";
+    cartSummary.style.display = "none";
+    return;
+  }
+
+  empty.style.display = "none";
+  cartSummary.style.display = "block";
+
+  cart.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.className = `cart-item ${item.selected ? 'selected' : ''}`;
+    div.innerHTML = `
+      <input type="checkbox" id="item-${index}" ${item.selected ? 'checked' : ''} onchange="toggleCartItemSelection(${index})">
+      <img src="${item.img}">
+      <div>${item.price}</div>
+      <img src="assets/delete.png" class="delete-btn" onclick="deleteItem(${index})">
+    `;
+    container.appendChild(div);
+  });
+  updateSelectedTotalPrice();
+}
+
+// Toggle cart item selection
+function toggleCartItemSelection(index) {
+  cart[index].selected = !cart[index].selected;
+  localStorage.setItem("cart", JSON.stringify(cart));
+  renderCart();
+}
+
+// Update total price of selected items
+function updateSelectedTotalPrice() {
+  const selectedTotalPriceElement = document.getElementById('selectedTotalPrice');
+  let total = 0;
+  cart.forEach(item => {
+    if (item.selected) {
+      const priceValue = parseFloat(item.price.replace('₮', '').replace(/,/g, ''));
+      if (!isNaN(priceValue)) {
+        total += priceValue;
+      }
+    }
+  });
+  selectedTotalPriceElement.innerText = `₮${total.toLocaleString()}`;
+}
+
+// Delete item
+function deleteItem(index) {
+  cart.splice(index, 1);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  renderCart();
+  updateCartCount();
+}
+
+// Notification animation
+function renderNotification(msg) {
+  const notify = document.getElementById("notify");
+  notify.innerText = msg;
+  notify.style.display = "block";
+  notify.style.animation = "notifyIn 0.3s forwards";
+  setTimeout(() => { notify.style.animation = "notifyOut 0.3s forwards"; }, 1500);
+  setTimeout(() => { notify.style.display = "none"; }, 1800);
+}
+
+// Generate unique code for Realtime Database
+async function generateUniqueCode() {
+  if (!db) {
+    console.error("Realtime Database is not initialized. Cannot generate unique code.");
+    throw new Error("Realtime Database is not initialized. Please check Firebase setup.");
+  }
+  
+  const newOrderRef = db.ref('orders').push();
+  const uniqueCode = newOrderRef.key;
+  console.log("Unique code generated (Realtime DB):", uniqueCode);
+  return uniqueCode;
+}
+
+// Checkout selected items
+async function checkoutSelectedItems() {
+  const selectedItems = cart.filter(item => item.selected);
+
+  if (selectedItems.length === 0) {
+    renderNotification("Захиалах бараа сонгоно уу!");
+    return;
+  }
+
+  const savedAddress = localStorage.getItem("userAddress");
+  let addressData = {};
+  if (savedAddress) {
+    addressData = JSON.parse(savedAddress);
+    if (!addressData.fullName || !addressData.phoneNumber || !addressData.province || !addressData.district || !addressData.khoroo || !addressData.street) {
+      renderNotification("Захиалга хийхийн өмнө хаягийн мэдээллээ бүрэн бөглөнө үү!");
+      showPage('addressPage');
+      return;
+    }
+  } else {
+    renderNotification("Захиалга хийхийн өмнө хаягаа бөглөнө үү!");
+    showPage('addressPage');
+    return;
+  }
+
+  const modal = document.getElementById("codeModal");
+  const codeDisplay = document.getElementById("paymentCode");
+  codeDisplay.innerText = "Кодыг үүсгэж байна...";
+  modal.style.display = "flex";
+
+  try {
+    if (!db) {
+      throw new Error("Realtime Database is not initialized.");
+    }
+
+    const uniqueCode = await generateUniqueCode();
+
+    if (!uniqueCode) {
+      throw new Error("Failed to generate unique code.");
+    }
+
+    let totalAmount = 0;
+    const itemsToOrder = selectedItems.map(item => {
+      const priceValue = parseFloat(item.price.replace('₮', '').replace(/,/g, ''));
+      if (!isNaN(priceValue)) {
+        totalAmount += priceValue;
+      }
+      return { img: item.img, price: item.price };
+    });
+
+    await db.ref('orders/' + uniqueCode).set({
+      items: itemsToOrder,
+      totalAmount: totalAmount,
+      address: addressData,
+      createdAt: firebase.database.ServerValue.TIMESTAMP,
+      status: 'pending'
+    });
+    
+    codeDisplay.innerText = uniqueCode;
+    renderNotification("Захиалга амжилттай үүслээ!");
+    console.log("Batched order saved to Realtime Database with code:", uniqueCode);
+
+    const orderToSave = {
+      orderId: uniqueCode,
+      items: itemsToOrder,
+      totalAmount: totalAmount,
+      createdAt: new Date().toISOString(),
+      status: 'pending'
+    };
+    orderHistory.push(orderToSave);
+    localStorage.setItem("orderHistory", JSON.stringify(orderHistory));
+
+  } catch (error) {
+    codeDisplay.innerText = "Алдаа гарлаа: " + error.message;
+    console.error("Error generating or saving batched order to Realtime Database:", error);
+    renderNotification("Захиалга үүсгэхэд алдаа гарлаа!");
+  }
+}
+
+// Close code modal
+function closeCodeModal() {
+  document.getElementById("codeModal").style.display = "none";
+}
+
+// Original openOrder function
+async function openOrder(img, amount) {
+  const modal = document.getElementById("codeModal");
+  const codeDisplay = document.getElementById("paymentCode");
+  codeDisplay.innerText = "Кодыг үүсгэж байна...";
+  modal.style.display = "flex";
+
+  try {
+    if (!db) {
+      throw new Error("Realtime Database is not initialized.");
+    }
+
+    const uniqueCode = await generateUniqueCode();
+
+    if (!uniqueCode) {
+      throw new Error("Failed to generate unique code.");
+    }
+
+    const savedAddress = localStorage.getItem("userAddress");
+    let addressData = {};
+    if (savedAddress) {
+      addressData = JSON.parse(savedAddress);
+      if (!addressData.fullName || !addressData.phoneNumber || !addressData.province || !addressData.district || !addressData.khoroo || !addressData.street) {
+        renderNotification("Захиалга хийхийн өмнө хаягийн мэдээллээ бүрэн бөглөнө үү!");
+        closeCodeModal();
+        showPage('addressPage');
+        return;
+      }
+    } else {
+      renderNotification("Захиалга хийхийн өмнө хаягаа бөглөнө үү!");
+      closeCodeModal();
+      showPage('addressPage');
+      return;
+    }
+
+    await db.ref('orders/' + uniqueCode).set({
+      items: [{ img: img, price: `₮${amount.toLocaleString()}` }],
+      totalAmount: parseFloat(amount),
+      address: addressData,
+      createdAt: firebase.database.ServerValue.TIMESTAMP,
+      status: 'pending'
+    });
+    
+    codeDisplay.innerText = uniqueCode;
+    renderNotification("Захиалга амжилттай үүслээ!");
+    console.log("Order saved to Realtime Database with code:", uniqueCode);
+
+    const orderToSave = {
+      orderId: uniqueCode,
+      items: [{ img: img, price: `₮${amount.toLocaleString()}` }],
+      totalAmount: parseFloat(amount),
+      createdAt: new Date().toISOString(),
+      status: 'pending'
+    };
+    orderHistory.push(orderToSave);
+    localStorage.setItem("orderHistory", JSON.stringify(orderHistory));
+
+  } catch (error) {
+    codeDisplay.innerText = "Алдаа гарлаа: " + error.message;
+    console.error("Error generating or saving order code to Realtime Database:", error);
+    renderNotification("Захиалга үүсгэхэд алдаа гарлаа!");
+  }
+}
+
+// Render History Page
+function renderHistory() {
+  const container = document.getElementById("orderHistoryItems");
+  const empty = document.getElementById("historyEmpty");
+  container.innerHTML = "";
+
+  if (orderHistory.length === 0) {
+    empty.style.display = "block";
+    return;
+  }
+
+  empty.style.display = "none";
+
+  const sortedHistory = [...orderHistory].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  sortedHistory.forEach(order => {
+    const orderCard = document.createElement("div");
+    orderCard.className = "order-card";
+
+    const orderDate = new Date(order.createdAt).toLocaleString('mn-MN', {
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    let itemsHtml = '<div class="order-item-list">';
+    order.items.forEach(item => {
+      itemsHtml += `<img src="${item.img}" alt="Product Image">`;
+    });
+    itemsHtml += '</div>';
+
+    orderCard.innerHTML = `
+      <h3>Захиалгын дугаар: ${order.orderId}</h3>
+      <p>Огноо: ${orderDate}</p>
+      <p>Төлөв: ${order.status === 'pending' ? 'Хүлээгдэж байна' : order.status}</p>
+      ${itemsHtml}
+      <div class="total-amount">Нийт үнэ: ₮${order.totalAmount.toLocaleString()}</div>
+    `;
+    container.appendChild(orderCard);
+  });
+}
+</script>
+</body>
+</html>
