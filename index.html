@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WARTEZA</title> <!-- Changed from Khalk Store to WARTEZA -->
+  <title>WARTEZA</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
   <!-- Firebase SDK v8 импортууд - Realtime Database-ийг нэмсэн -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -23,29 +23,31 @@
       position: relative;
       padding-bottom: 15px;
     }
-    header img.logo{width:40px;height:40px;cursor:pointer;}
     header .logo-container {
       display:flex; 
-      flex-direction: row;
-      align-items:center; 
-      gap: 10px;
-      position: relative;
+      flex-direction: column; /* Changed to column to keep menu-text below logo */
+      align-items: flex-start; 
+      gap: 5px;
     }
-    header .logo-text {
-      font-family: 'Cinzel', serif; 
-      font-size:14px;
-      font-weight:700; 
-      color:#fff; 
-      text-transform:uppercase;
-      margin-left: -5px;
-    }
+    header img.logo {width:40px; height:40px; cursor:pointer;}
     header .menu-text {
-      position: absolute;
-      top: 50px;
-      left: 20px;
       font-size: 10px;
       color: #ccc;
       white-space: nowrap;
+    }
+    header .right-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    header .logo-text {
+      font-family: 'Cinzel', serif; 
+      font-size: 18px; /* Increased for prominence */
+      font-weight: 700; 
+      color: #fff; 
+      text-transform: uppercase;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* Added to make it stand out */
+      letter-spacing: 1px;
     }
     header .cart-container, header .history-container {
       position: relative;
@@ -54,18 +56,13 @@
       align-items: center;
       gap: 5px;
     }
-    header .right-icons {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    header img.cart, header img.history{width:28px;height:28px;}
+    header img.cart, header img.history {width:28px; height:28px;}
     .cart-count {
       position: absolute;
       top: -4px;
       right: -4px;
-      background: #fff; /* Changed from linear-gradient(45deg, #ff0000, #cc0000) to white */
-      color: #000; /* Changed to black for contrast */
+      background: #fff;
+      color: #000;
       border-radius: 50%;
       padding: 0px;
       font-size: 8px;
@@ -157,7 +154,7 @@
     }
     .product:hover img {transform: scale(1.1);}
     .price {margin-top:8px; font-size:14px;}
-    .old-price{text-decoration:line-through;color:#999;margin-left:4px;}
+    .old-price {text-decoration:line-through; color:#999; margin-left:4px;}
     button {
       padding:6px 12px; 
       border:none; 
@@ -181,8 +178,8 @@
     }
     .page {display:none; opacity: 0; transform: rotateY(90deg); animation: rotateIn 0.5s ease forwards;}
     .page.active {display:block;}
-    .cart-page{padding:20px;}
-    .cart-item{
+    .cart-page {padding:20px;}
+    .cart-item {
       background:#1c1c1c; 
       border-radius:12px; 
       padding:10px; 
@@ -194,15 +191,15 @@
       animation:slideIn 0.5s ease forwards;
       border: 2px solid transparent;
     }
-    .cart-item.selected {border-color: #fff;} /* Changed from #ff4d4d to white */
-    .cart-item img{width:50px;border-radius:6px;}
-    .cart-empty{text-align:center;margin-top:50px;color:#888;font-size:16px;}
-    .cart-item .delete-btn{
+    .cart-item.selected {border-color: #fff;}
+    .cart-item img {width:50px; border-radius:6px;}
+    .cart-empty {text-align:center; margin-top:50px; color:#888; font-size:16px;}
+    .cart-item .delete-btn {
       position:absolute; right:-50px; top:50%; transform:translateY(-50%); width:28px; height:28px;
       opacity:0; transition: all 0.3s ease;
     }
-    .cart-item:hover{border:2px solid #007bff;}
-    .cart-item:hover .delete-btn{right:10px; opacity:1;}
+    .cart-item:hover {border:2px solid #007bff;}
+    .cart-item:hover .delete-btn {right:10px; opacity:1;}
     .cart-summary {
       background: #1c1c1c;
       border-radius: 12px;
@@ -212,36 +209,36 @@
       color: #fff;
     }
     .cart-summary div {margin-bottom: 10px; font-size: 16px;}
-    .cart-summary .total-price {font-size: 20px; font-weight: bold; color: #fff;} /* Changed from #ff4d4d to white */
+    .cart-summary .total-price {font-size: 20px; font-weight: bold; color: #fff;}
     .cart-summary button {
       width: 100%;
       padding: 12px;
-      background: #fff; /* Changed from linear-gradient(45deg, #ff4d4d, #ff1a1a) to white */
-      color: #000; /* Added for contrast */
+      background: #fff;
+      color: #000;
       border: none;
       border-radius: 8px;
       font-size: 18px;
       cursor: pointer;
       transition: background 0.3s ease, transform 0.2s ease;
     }
-    .cart-summary button:hover {background: #e0e0e0; transform: translateY(-2px);} /* Adjusted hover to light gray */
+    .cart-summary button:hover {background: #e0e0e0; transform: translateY(-2px);}
     .cart-item input[type="checkbox"] {
       -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
       width: 20px;
       height: 20px;
-      border: 2px solid #fff; /* Changed from #ff4d4d to white */
+      border: 2px solid #fff;
       border-radius: 4px;
       cursor: pointer;
       position: relative;
       margin-right: 10px;
       flex-shrink: 0;
     }
-    .cart-item input[type="checkbox"]:checked {background-color: #fff; border-color: #fff;} /* Changed from #ff4d4d to white */
+    .cart-item input[type="checkbox"]:checked {background-color: #fff; border-color: #fff;}
     .cart-item input[type="checkbox"]:checked::after {
       content: '✔';
-      color: #000; /* Changed to black for contrast */
+      color: #000;
       font-size: 14px;
       position: absolute;
       top: 50%;
@@ -258,7 +255,7 @@
       border: 1px solid #333;
       animation: slideIn 0.5s ease forwards;
     }
-    .order-card h3 {color: #fff; margin-top: 0; margin-bottom: 10px; font-size: 18px;} /* Changed from #ff4d4d to white */
+    .order-card h3 {color: #fff; margin-top: 0; margin-bottom: 10px; font-size: 18px;}
     .order-card .order-item-list {display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;}
     .order-card .order-item-list img {width: 40px; height: 40px; border-radius: 6px; object-fit: cover; border: 1px solid #555;}
     .order-card p {margin: 5px 0; font-size: 14px; color: #ccc;}
@@ -309,12 +306,12 @@
       transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
       outline: none;
     }
-    .product-panel button:nth-child(1) {background: #1c1c1c; border: 2px solid #fff;} /* Changed from #ff4d4d to white */
-    .product-panel button:nth-child(1):hover {transform: scale(1.1); box-shadow: 0 2px 8px rgba(255,255,255,0.3); opacity: 0.9;} /* Adjusted shadow */
-    .product-panel button:nth-child(1):focus {outline: none; box-shadow: 0 0 8px rgba(255,255,255,0.5);} /* Adjusted shadow */
-    .product-panel button:nth-child(2) {background: #fff; color: #000;} /* Changed from red gradient to white */
-    .product-panel button:nth-child(2):hover {transform: scale(1.1); box-shadow: 0 2px 8px rgba(255,255,255,0.3); opacity: 0.9;} /* Adjusted shadow */
-    .product-panel button:nth-child(2):focus {outline: none; box-shadow: 0 0 8px rgba(255,255,255,0.5);} /* Adjusted shadow */
+    .product-panel button:nth-child(1) {background: #1c1c1c; border: 2px solid #fff;}
+    .product-panel button:nth-child(1):hover {transform: scale(1.1); box-shadow: 0 2px 8px rgba(255,255,255,0.3); opacity: 0.9;}
+    .product-panel button:nth-child(1):focus {outline: none; box-shadow: 0 0 8px rgba(255,255,255,0.5);}
+    .product-panel button:nth-child(2) {background: #fff; color: #000;}
+    .product-panel button:nth-child(2):hover {transform: scale(1.1); box-shadow: 0 2px 8px rgba(255,255,255,0.3); opacity: 0.9;}
+    .product-panel button:nth-child(2):focus {outline: none; box-shadow: 0 0 8px rgba(255,255,255,0.5);}
     @keyframes panelIn {from {opacity: 0; transform: translateX(-50%) scale(0.8);} to {opacity: 1; transform: translateX(-50%) scale(1);}}
     #codeModal {
       display: none;
@@ -337,8 +334,8 @@
       color: #fff;
     }
     .code-modal-content h3 {margin: 0 0 10px;}
-    .code-modal-content p {font-size: 18px; font-weight: bold; color: #fff;} /* Changed from #ff4d4d to white */
-    .code-modal-content button {background: #fff; color: #000; padding: 10px 20px; border-radius: 8px;} /* Changed from #ff4d4d to white */
+    .code-modal-content p {font-size: 18px; font-weight: bold; color: #fff;}
+    .code-modal-content button {background: #fff; color: #000; padding: 10px 20px; border-radius: 8px;}
     #sidebar {
       position: fixed;
       top: 0;
@@ -364,7 +361,7 @@
       gap: 10px;
     }
     #sidebar li img {width: 24px; height: 24px; vertical-align: middle;}
-    #sidebar li:hover {background: #fff; color: #000; border-radius: 8px;} /* Changed from #ff4d4d to white */
+    #sidebar li:hover {background: #fff; color: #000; border-radius: 8px;}
     #sidebar .close-btn {
       position: absolute;
       top: 15px;
@@ -423,17 +420,19 @@
 
 <header>
   <div class="logo-container">
-    <img src="assets/khalk.png" class="logo" alt="WARTEZA Logo" onclick="toggleSidebar()"> <!-- Updated alt text -->
-    <span class="logo-text">WARTEZA</span> <!-- Changed from Khalk Store to WARTEZA -->
+    <img src="assets/menu.png" class="logo" alt="Menu Icon" onclick="toggleSidebar()"> <!-- Changed from khalk.png to menu.png -->
+    <span class="menu-text">Menu</span>
   </div>
-  <span class="menu-text">Menu</span>
-  <div class="right-icons">
-    <div class="history-container" onclick="openHistory()">
-      <img src="assets/history.png" class="history" alt="History">
-    </div>
-    <div class="cart-container" onclick="openCart()">
-      <img src="assets/cart.png" class="cart" alt="Cart">
-      <span class="cart-count" id="cartCount">0</span>
+  <div class="right-container">
+    <span class="logo-text">WARTEZA</span> <!-- Moved to right -->
+    <div class="right-icons">
+      <div class="history-container" onclick="openHistory()">
+        <img src="assets/history.png" class="history" alt="History">
+      </div>
+      <div class="cart-container" onclick="openCart()">
+        <img src="assets/cart.png" class="cart" alt="Cart">
+        <span class="cart-count" id="cartCount">0</span>
+      </div>
     </div>
   </div>
   <div id="current-page-display">Home</div>
